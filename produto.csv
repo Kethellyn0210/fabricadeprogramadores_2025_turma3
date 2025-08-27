@@ -1,0 +1,9 @@
+umport
+examplifile=open ("exemple.csv")
+exaplereder = cvs.reader (examplifile)
+exampleData = list (exaplereder)
+exampleDataProduto,Categoria,Marca,Preço (R$),Cor/Variedade
+Base Líquida,Face,Maybelline,49.90,Bege Médio
+Corretivo Líquido,Face,Ruby Rose,18.50,Claro 2
+Pó Compacto,Face,Vult,29.90,Bege Claro
+Blush em Pó,Rosto,Luisance,15.00,Rosa Queimado
