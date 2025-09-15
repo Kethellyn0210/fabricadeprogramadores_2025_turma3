@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template
 import sqlite3
 
 app = Flask(__name__)
@@ -13,48 +13,45 @@ def get_db():
 def init_db():
     with app.app_context():
         db = get_db()
-        with app.open_resource('schema.sql', mode = 'r') as f:
+        with app.open_resource('schema.sql', mode='r') as f:
             db.cursor().executescript(f.read())
-        db.commit
-
-def new_note(nota):
-    con = sqlite3.connect(BANCO_DE_DADOS)
-    cur = con.cursor()
-    cur.execute("""
-        INSERT INTO anotacoes(texto, data_hora)
-        VALUES(%, datetime('now))
-    """ % nota)
-    con.commit()
-    cur.close()
-    con.close()
-@app.route('/iniciar')
-def iniciar ():
-    init_db()
-    return 'Banco de daddos iniciado...'
- 
-@app.route('/home', methods = ["GET"])
-def home ():
-    try:
-        db = get_db()
-        cursor = db.cursor()
-        cursor.execute('SELECT * FROM anotacoes')
-        dados = cursor.fetchall()
-        return jsonify([dict(row) for row in dados])
-    except sqlite3.Error as e:
-        return jsonify({'error': str(e)}), 500
-    finally:
-        db.close()
+        db.commit() 
 
 @app.route('/')
 def index():
-    return '''<h1> Bloco de notas </h1>
-            <h2> Rotas:</h2>
-            <ul>
-                <li>
-                    <a href="/iniciar">/iniciar</a>
-                </li>
-                <li>
-                    <a href="/home">/home</a>
-                </li>
-            </ul>
-    '''
+    init_db()
+    return render_template('index.html')
+
+@app.route('/notas', methods=["GET", "POST"])
+def notas():
+    if request.method == 'GET':
+        try:
+            db = get_db()
+            cur = db.cursor()
+            cur.execute('SELECT * FROM anotacoes')
+            dados = cur.fetchall()
+            return render_template('index.html', data=[dict(row) for row in dados])
+        except sqlite3.Error as e:
+            return jsonify({'error': str(e)}), 500
+        finally:
+            cur.close()
+            db.close()
+
+    elif request.method == 'POST':
+        anotacao = request.form.get('anotacao')
+        if not anotacao:
+            return jsonify({'error': 'Anotação é obrigatória'}), 400
+        try:
+            db = get_db()
+            cur = db.cursor()
+            cur.execute(
+                "INSERT INTO anotacoes (texto, data_hora) VALUES (?, datetime('now'))",
+                (anotacao,)
+            )
+            db.commit()
+            return render_template('index.html')
+        except sqlite3.Error as e:
+            return jsonify({'error': str(e)}), 500
+        finally:
+            cur.close()
+            db.close()
